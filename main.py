@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta
@@ -56,6 +56,7 @@ async def fetchData(username: str, fetchAll: bool) -> tuple | list:
         return data
 
 # Remove all timestams more than 24 hours ago
+@tasks.loop()
 async def checkData() -> None:
     async with aiosqlite.connect(DBNAME) as db:
         cursor = await db.cursor()
@@ -68,11 +69,11 @@ async def checkData() -> None:
 @bot.event
 async def on_ready() -> None:
     await createTable()
+    checkData.start()
     print(
         f"Bot is ready, invite link: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot"
     )
-    while True: # Run forever
-        await checkData()
+
 
 ##### STATIC EMBEDS #####
 documenting = discord.Embed(title="Documenting",

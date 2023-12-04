@@ -8,7 +8,7 @@ pip install aiosqlite
 pip install python-dotenv
 ```
 - Make sure to allow message.content intent on the Discord Developer Portal
-  
+- Manage messages permission (Optional)
 # Commands
 - Use "/sale" to document your sales
 - Use "/check" to examine if you can sell a vehicle

@@ -7,9 +7,12 @@ pip install py-cord
 pip install aiosqlite
 pip install python-dotenv
 ```
+- Make sure to allow message.content intent
+  
 # Commands
 - Use "/sale" to document your sales
 - Use "/check" to examine if you can sell a vehicle
+- Use "/remove" to remove any accidental sales
 
 # Usage
 - Put your discord bot token in .env

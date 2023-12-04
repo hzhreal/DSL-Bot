@@ -6,8 +6,6 @@ from datetime import datetime, timedelta
 from database import Db
 import asyncio
 
-# MAKE REMOVE COMMAND, NO PARAMETERS, CHECK SALES FROM USER, THEN RESPOND WITH EMBED WITH BUTTONS REPRESENTING INDEX (start with 1), THEN REMOVE CLICK, TIMEOUT AFTER 2 MIN MAYBE
-
 load_dotenv()
 
 activity = discord.Activity(type=discord.ActivityType.watching, name="Cars")

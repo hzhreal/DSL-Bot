@@ -7,7 +7,7 @@ pip install py-cord
 pip install aiosqlite
 pip install python-dotenv
 ```
-- Make sure to allow message.content intent
+- Make sure to allow message.content intent on the Discord Developer Portal
   
 # Commands
 - Use "/sale" to document your sales

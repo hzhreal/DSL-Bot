@@ -38,10 +38,10 @@ class Db:
             cursor = await db.cursor()
 
             if fetchAll:
-                await cursor.execute("SELECT * FROM UserTimestamps WHERE username = ?", (username,))
+                await cursor.execute("SELECT ROWID, * FROM UserTimestamps WHERE username = ?", (username,))
             else:
                 threshold = datetime.now() - timedelta(hours=2)
-                await cursor.execute("SELECT * FROM UserTimestamps WHERE username = ? AND timestamp > ?", (username, threshold))
+                await cursor.execute("SELECT ROWID, * FROM UserTimestamps WHERE username = ? AND timestamp > ?", (username, threshold))
 
             rows = await cursor.fetchall()
 

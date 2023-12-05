@@ -5,6 +5,7 @@ import os
 from datetime import datetime, timedelta
 from database import Db
 import asyncio
+import time
 
 load_dotenv()
 
@@ -105,30 +106,40 @@ async def check(ctx) -> None:
     if len(allSales) == 0:
         formattedAllSales = "None"     
     else:
-        formattedAllSales = "\n".join([f"Username: {usernameObtained}, Timestamp: {timestamp}" for usernameObtained, timestamp in allSales])
+        formattedAllSales = "\n".join([f"{index + 1}. Username: {usernameObtained}, Timestamp: {timestamp}" for index, (_, usernameObtained, timestamp) in enumerate(allSales)])
     sales = await Db.fetchData(username, fetchAll=False)
 
     if (len(sales) == 2 and len(allSales) == 9) or (len(allSales) == 9 and len(sales) < 2):
         timestamps = [timestamp for _, timestamp in allSales]
-        timeLeft = timedelta(hours=24) - (datetime.now() - datetime.strptime(timestamps[0], "%Y-%m-%d %H:%M:%S.%f"))
+        timestamp_datetime = datetime.now() - datetime.strptime(timestamps[0], "%Y-%m-%d %H:%M:%S.%f")
+        timeLeft = (timedelta(hours=24) - timestamp_datetime).total_seconds()
+
+        epoch = time.time()
+        epochFormatted = f"<t:{round(epoch + timeLeft)}:R>"
+
         cannotSell = discord.Embed(title="DSL",
                                    description=(
                                        f"SALES LAST 24 HOURS:\n**{formattedAllSales}**\n\n"
                                        f"You have sold **{len(sales)}** vehicles in the last 2 hours, the maximum is 2.\n"
                                        f"You have sold **{len(allSales)}** vehicles in the last 24 hours, the maximum is 9.\n"
-                                       f"You can not sell a vehicle without hitting the daily sell limit, **{timeLeft}** left."),
+                                       f"You can not sell a vehicle without hitting the daily sell limit, {epochFormatted}."),
                                    color=discord.Color.red())
         await ctx.edit(embed=cannotSell)
     
     elif len(sales) == 2 and len(allSales) < 9:
         timestamps = [timestamp for _, timestamp in sales]
-        timeLeft = timedelta(hours=2) - (datetime.now() - datetime.strptime(timestamps[0], "%Y-%m-%d %H:%M:%S.%f"))
+        timestamp_datetime = datetime.now() - datetime.strptime(timestamps[0], "%Y-%m-%d %H:%M:%S.%f")
+        timeLeft = (timedelta(hours=2) - timestamp_datetime).total_seconds()
+      
+        epoch = time.time()
+        epochFormatted = f"<t:{round(epoch + timeLeft)}:R>"
+
         cannotSell = discord.Embed(title="DSL",
                                    description=(
                                        f"SALES LAST 24 HOURS:\n**{formattedAllSales}**\n\n"
                                        f"You have sold **{len(sales)}** vehicles in the last 2 hours, the maximum is 2.\n"
                                        f"You have sold **{len(allSales)}** vehicles in the last 24 hours, the maximum is 9.\n"
-                                       f"You can not sell a vehicle without hitting the daily sell limit, **{timeLeft}** left."),
+                                       f"You can not sell a vehicle without hitting the daily sell limit, {epochFormatted}."),
                                    color=discord.Color.red())
         await ctx.edit(embed=cannotSell)
 
@@ -158,16 +169,17 @@ async def remove(ctx) -> None:
 
     username = str(ctx.author)
     allSales = await Db.fetchData(username, fetchAll=True)
-    formattedAllSales = "\n".join([f"{index + 1}. Username: {usernameObtained}, Timestamp: {timestamp}" for index , (usernameObtained, timestamp) in enumerate(allSales)])
-    buttonCount = len(allSales)
+    formattedAllSales = "\n".join([f"{rowid}. Username: {usernameObtained}, Timestamp: {timestamp}" for rowid, usernameObtained, timestamp in allSales])
+    rowids = [rowid for rowid, _, _ in allSales]
+    saleCount = len(allSales)
 
-    if buttonCount == 0:
+    if saleCount == 0:
         await ctx.edit(embed=noSales)
     
     else:  
-            
+        timeout_seconds = 300
         salesFound = discord.Embed(title="Sales found",
-                           description=f"Send the number here in this channel representing your sale to remove it from the database.\n\n**{formattedAllSales}**",
+                           description=f"Send the number here in this channel representing your sale to remove it from the database. Send 'NONE' to exit, message times out in {timeout_seconds / 60} minutes.\n\n**{formattedAllSales}**",
                            color=discord.Color.blue())
         salesFound.set_footer(text="Created by hzh.")
         
@@ -175,10 +187,10 @@ async def remove(ctx) -> None:
 
         def check(message, ctx):
             if message.author == ctx.author and message.channel == ctx.channel:
-                return (message.content and int(message.content) != 0 and int(message.content) <= MAX_SALES_PER_USER)
+                return (message.content and message.content != "0" and (message.content == "NONE" or message.content.isdigit()))
         
         try:
-            message = await bot.wait_for('message', check=lambda message: check(message, ctx), timeout=300)
+            message = await bot.wait_for('message', check=lambda message: check(message, ctx), timeout=timeout_seconds)
         except asyncio.TimeoutError:
             await ctx.edit(embed=timedOut)
             return
@@ -187,14 +199,26 @@ async def remove(ctx) -> None:
             await message.delete()
         except:
             pass
+        
+        if message.content == "NONE":
+            await ctx.delete()
 
-        rowid = int(message.content)
-        await Db.removeData(username, rowid)
+        else:
+            rowid = int(message.content)
+            if rowid in rowids:
+                await Db.removeData(username, rowid)
 
-        removed = discord.Embed(title="Removed successfully",
-                                description=f"Deleted sale number **{rowid}** from the database.",
-                                color=discord.Color.green())
-        removed.set_footer(text="Created by hzh.")
-        await ctx.edit(embed=removed)
+                removed = discord.Embed(title="Removed successfully",
+                                        description=f"Deleted sale number **{rowid}** from the database.",
+                                        color=discord.Color.green())
+                removed.set_footer(text="Created by hzh.")
+                await ctx.edit(embed=removed)
+            
+            else:
+                removedError = discord.Embed(title="Error",
+                                        description=f"Sale number **{rowid}** does not exist in the database.",
+                                        color=discord.Color.red())
+                removedError.set_footer(text="Created by hzh.")
+                await ctx.edit(embed=removedError)
         
 bot.run(str(os.getenv("TOKEN")))

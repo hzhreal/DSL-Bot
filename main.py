@@ -110,7 +110,7 @@ async def check(ctx) -> None:
     sales = await Db.fetchData(username, fetchAll=False)
 
     if (len(sales) == 2 and len(allSales) == 9) or (len(allSales) == 9 and len(sales) < 2):
-        timestamps = [timestamp for _, timestamp in allSales]
+        timestamps = [timestamp for _, _, timestamp in allSales]
         timestamp_datetime = datetime.now() - datetime.strptime(timestamps[0], "%Y-%m-%d %H:%M:%S.%f")
         timeLeft = (timedelta(hours=24) - timestamp_datetime).total_seconds()
 
@@ -124,10 +124,11 @@ async def check(ctx) -> None:
                                        f"You have sold **{len(allSales)}** vehicles in the last 24 hours, the maximum is 9.\n"
                                        f"You can not sell a vehicle without hitting the daily sell limit, {epochFormatted}."),
                                    color=discord.Color.red())
+        cannotSell.set_footer(text="Created by hzh.")
         await ctx.edit(embed=cannotSell)
     
     elif len(sales) == 2 and len(allSales) < 9:
-        timestamps = [timestamp for _, timestamp in sales]
+        timestamps = [timestamp for _, _, timestamp in sales]
         timestamp_datetime = datetime.now() - datetime.strptime(timestamps[0], "%Y-%m-%d %H:%M:%S.%f")
         timeLeft = (timedelta(hours=2) - timestamp_datetime).total_seconds()
       
@@ -141,6 +142,7 @@ async def check(ctx) -> None:
                                        f"You have sold **{len(allSales)}** vehicles in the last 24 hours, the maximum is 9.\n"
                                        f"You can not sell a vehicle without hitting the daily sell limit, {epochFormatted}."),
                                    color=discord.Color.red())
+        cannotSell.set_footer(text="Created by hzh.")
         await ctx.edit(embed=cannotSell)
 
     elif len(sales) > 2 or len(allSales) > 9:
@@ -151,6 +153,7 @@ async def check(ctx) -> None:
                                        f"You have sold **{len(allSales)}** vehicles in the last 24 hours, the maximum is 9.\n"
                                        f"DO NOT SELL ANOTHER VEHICLE! CHECK OUT [Detailed Guide About DSL]({DSLDOCS})"),
                                    color=discord.Color.red())
+        cannotSell.set_footer(text="Created by hzh.")
         await ctx.edit(embed=cannotSell)
 
     else:
@@ -161,6 +164,7 @@ async def check(ctx) -> None:
                                        f" You have sold **{len(sales)}** vehicles in the last 2 hours, the maximum is 2."
                                        f" You have sold **{len(allSales)}** vehicles in the last 24 hours, the maximum is 9."),
                                    color=discord.Color.green())
+        canSell.set_footer(text="Created by hzh.")
         await ctx.edit(embed=canSell)
 
 @bot.slash_command(description="Remove an accidental sale you documented using the bot.")
